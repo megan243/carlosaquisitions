@@ -1,0 +1,961 @@
+<!-- Florida Pre-Foreclosure Deal Desk -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Deal Desk — Florida Pre-Foreclosure Analyzer</title>
+<style>
+  :root{
+    --ink:#0C2B2A; --ink2:#103E3A;
+    --paper:#ECF1EF; --card:#FFFFFF;
+    --line:#D7E0DC; --line2:#E7EDEA;
+    --text:#122524; --muted:#5E726E;
+    --teal:#0E7C70; --teal-deep:#0A4F49;
+    --go:#1E7D45; --go-bg:#E4F2E8;
+    --warn:#B26A00; --warn-bg:#FBEFD9;
+    --stop:#B0322B; --stop-bg:#FAE6E3;
+    --gold:#B7892E;
+    --font-sans:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;
+    --font-mono:ui-monospace,'SF Mono','JetBrains Mono','Cascadia Code',Menlo,Consolas,monospace;
+    --r:14px;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0}
+  body{background:var(--paper);color:var(--text);font-family:var(--font-sans);line-height:1.45;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 18px 64px}
+
+  /* ---------- Header / spine ---------- */
+  header{background:linear-gradient(180deg,var(--ink) 0%,var(--ink2) 100%);color:#EAF3F0;margin:0 -18px 22px;padding:22px 18px 20px;border-bottom:3px solid var(--teal)}
+  header .inner{max-width:1180px;margin:0 auto;display:flex;flex-wrap:wrap;gap:16px;align-items:flex-end;justify-content:space-between}
+  .brand .eyebrow{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#7FB8AE;font-weight:600}
+  .brand h1{margin:4px 0 0;font-size:26px;letter-spacing:-.01em;font-weight:700}
+  .brand h1 b{color:#5FD0BF;font-weight:700}
+  .brand .sub{margin-top:5px;font-size:13px;color:#9FBDB8;max-width:46ch}
+  .topctrls{display:flex;gap:10px;flex-wrap:wrap;align-items:flex-end}
+  .topctrls .field{min-width:140px}
+  .topctrls label{color:#8FB6B0}
+  .topctrls select, .topctrls input{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.18);color:#EAF3F0}
+  .topctrls select option{color:#122524}
+
+  /* ---------- Layout ---------- */
+  .grid{display:grid;grid-template-columns:1fr 430px;gap:22px;align-items:start}
+  @media(max-width:920px){.grid{grid-template-columns:1fr}}
+
+  /* ---------- Cards ---------- */
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:16px 16px 6px;margin-bottom:16px;box-shadow:0 1px 0 rgba(12,43,42,.03)}
+  .card > h2{margin:0 0 2px;font-size:12px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal-deep);font-weight:700;display:flex;align-items:center;gap:8px}
+  .card > h2 .n{font-family:var(--font-mono);font-size:11px;color:#fff;background:var(--teal);border-radius:6px;padding:1px 6px;letter-spacing:0}
+  .card .hint{font-size:12px;color:var(--muted);margin:2px 0 12px}
+
+  .row{display:grid;grid-template-columns:1fr 1fr;gap:12px 14px}
+  .row.three{grid-template-columns:1fr 1fr 1fr}
+  @media(max-width:520px){.row,.row.three{grid-template-columns:1fr 1fr}}
+  .field{display:flex;flex-direction:column;gap:5px;margin-bottom:12px}
+  .field.full{grid-column:1/-1}
+  label{font-size:11.5px;font-weight:600;color:var(--muted);letter-spacing:.02em;display:flex;justify-content:space-between;gap:6px}
+  label .tag{font-weight:500;color:#9AA9A6;text-transform:none;letter-spacing:0}
+  .inp{position:relative;display:flex;align-items:center}
+  .inp .pre,.inp .post{position:absolute;font-family:var(--font-mono);font-size:13px;color:var(--muted);pointer-events:none}
+  .inp .pre{left:11px}.inp .post{right:11px}
+  input,select{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:#fff;color:var(--text);font-size:14px;font-family:var(--font-sans);outline:none;transition:border-color .12s,box-shadow .12s}
+  input.money{font-family:var(--font-mono);padding-left:22px;text-align:right;padding-right:11px}
+  input.pct{font-family:var(--font-mono);text-align:right;padding-right:24px}
+  input:focus,select:focus{border-color:var(--teal);box-shadow:0 0 0 3px rgba(14,124,112,.13)}
+
+  /* segmented toggles */
+  .seg{display:inline-flex;background:var(--line2);border-radius:9px;padding:3px;gap:3px}
+  .seg button{border:0;background:transparent;color:var(--muted);font-family:var(--font-sans);font-size:12.5px;font-weight:600;padding:7px 13px;border-radius:7px;cursor:pointer;transition:.12s}
+  .seg button.on{background:#fff;color:var(--teal-deep);box-shadow:0 1px 3px rgba(12,43,42,.12)}
+  .seg.dark{background:rgba(255,255,255,.08)}
+  .seg.dark button{color:#9FBDB8}
+  .seg.dark button.on{background:#5FD0BF;color:#06302C}
+
+  details.fin{border-top:1px dashed var(--line);margin-top:2px}
+  details.fin summary{cursor:pointer;list-style:none;padding:11px 0;font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--teal-deep);font-weight:700;display:flex;align-items:center;gap:8px}
+  details.fin summary::-webkit-details-marker{display:none}
+  details.fin summary .chev{margin-left:auto;transition:.15s;color:var(--muted)}
+  details.fin[open] summary .chev{transform:rotate(90deg)}
+
+  /* ---------- Results ---------- */
+  .results{position:sticky;top:16px}
+  @media(max-width:920px){.results{position:static}}
+
+  .verdict{border-radius:var(--r);padding:16px 18px;color:#fff;margin-bottom:16px;box-shadow:0 6px 22px rgba(12,43,42,.16)}
+  .verdict .vk{font-size:11px;letter-spacing:.2em;text-transform:uppercase;opacity:.85;font-weight:600}
+  .verdict .grade{font-size:30px;font-weight:800;letter-spacing:-.01em;margin:2px 0 0;display:flex;align-items:center;gap:12px}
+  .verdict .grade .dot{width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.22)}
+  .verdict .rec{font-size:13.5px;opacity:.95;margin-top:7px}
+  .verdict .rec b{font-weight:700}
+  .v-go{background:linear-gradient(135deg,#16623A,#1E7D45)}
+  .v-warn{background:linear-gradient(135deg,#8C5300,#B26A00)}
+  .v-stop{background:linear-gradient(135deg,#8A2722,#B0322B)}
+
+  .mao{background:var(--ink);color:#EAF3F0;border-radius:var(--r);padding:15px 18px;margin-bottom:16px}
+  .mao .lbl{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#7FB8AE;font-weight:600}
+  .mao .big{font-family:var(--font-mono);font-size:30px;font-weight:600;color:#5FD0BF;letter-spacing:-.01em;margin:3px 0 1px}
+  .mao .note{font-size:12px;color:#9FBDB8}
+  .mao .split{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px;border-top:1px solid rgba(255,255,255,.12);padding-top:11px}
+  .mao .split .k{font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:#7FB8AE}
+  .mao .split .v{font-family:var(--font-mono);font-size:16px;margin-top:1px}
+
+  .strats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  @media(max-width:520px){.strats{grid-template-columns:1fr}}
+  .strat{border:1px solid var(--line);border-radius:12px;background:#fff;padding:13px 13px 11px;position:relative;overflow:hidden}
+  .strat.best{border-color:var(--teal);box-shadow:0 0 0 1px var(--teal)}
+  .strat .badge{position:absolute;top:0;right:0;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;font-weight:700;color:#fff;background:var(--teal);padding:3px 8px;border-bottom-left-radius:8px}
+  .strat h3{margin:0 0 1px;font-size:13px;font-weight:700;color:var(--text)}
+  .strat .gl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;display:inline-flex;align-items:center;gap:5px;margin-bottom:9px}
+  .gl .gdot{width:8px;height:8px;border-radius:50%}
+  .gl.go{color:var(--go)} .gl.go .gdot{background:var(--go)}
+  .gl.warn{color:var(--warn)} .gl.warn .gdot{background:var(--warn)}
+  .gl.stop{color:var(--stop)} .gl.stop .gdot{background:var(--stop)}
+  .strat .profit{font-family:var(--font-mono);font-size:23px;font-weight:600;letter-spacing:-.01em}
+  .strat .profit.neg{color:var(--stop)}
+  .strat .plabel{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+  .strat .mets{display:grid;grid-template-columns:1fr 1fr;gap:7px 10px;margin-top:11px;border-top:1px solid var(--line2);padding-top:10px}
+  .strat .met .mk{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em}
+  .strat .met .mv{font-family:var(--font-mono);font-size:14.5px;font-weight:600;margin-top:1px}
+
+  .breakdown{background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:6px 16px 10px;margin-bottom:16px}
+  .breakdown summary{cursor:pointer;list-style:none;padding:11px 0;font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-deep);font-weight:700;display:flex;align-items:center}
+  .breakdown summary::-webkit-details-marker{display:none}
+  .breakdown summary .chev{margin-left:auto;color:var(--muted);transition:.15s}
+  .breakdown[open] summary .chev{transform:rotate(90deg)}
+  .bd-strat{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:8px 0 4px}
+  table.bd{width:100%;border-collapse:collapse;font-size:13px}
+  table.bd td{padding:5px 0;border-bottom:1px solid var(--line2)}
+  table.bd td.v{text-align:right;font-family:var(--font-mono)}
+  table.bd tr.sum td{font-weight:700;border-top:2px solid var(--line);border-bottom:0;padding-top:8px}
+  table.bd tr.sum td.v{color:var(--teal-deep)}
+  table.bd td .mini{color:var(--muted);font-size:11px}
+  .neg{color:var(--stop)}
+
+  .saver{display:flex;gap:10px;align-items:stretch;margin-bottom:14px}
+  .saver input{flex:1}
+  .btn{border:0;border-radius:9px;padding:10px 16px;font-family:var(--font-sans);font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;transition:.12s}
+  .btn-primary{background:var(--teal);color:#fff}
+  .btn-primary:hover{background:var(--teal-deep)}
+  .btn-ghost{background:#fff;border:1px solid var(--line);color:var(--teal-deep)}
+  .btn-ghost:hover{border-color:var(--teal)}
+
+  .saved h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal-deep);font-weight:700;margin:4px 0 8px}
+  .deal{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);border-radius:10px;padding:9px 11px;margin-bottom:8px}
+  .deal .dinfo{flex:1;min-width:0}
+  .deal .dn{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .deal .dm{font-size:11px;color:var(--muted);font-family:var(--font-mono)}
+  .deal .pill{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;padding:3px 7px;border-radius:20px}
+  .pill.go{background:var(--go-bg);color:var(--go)} .pill.warn{background:var(--warn-bg);color:var(--warn)} .pill.stop{background:var(--stop-bg);color:var(--stop)}
+  .deal .x{background:none;border:0;color:var(--muted);cursor:pointer;font-size:18px;line-height:1;padding:2px 4px;border-radius:6px}
+  .deal .x:hover{color:var(--stop);background:var(--stop-bg)}
+  .empty{font-size:12.5px;color:var(--muted);font-style:italic;padding:6px 2px}
+
+  .foot{margin-top:14px;font-size:11.5px;color:var(--muted);line-height:1.5}
+  .foot b{color:var(--text)}
+  .miami-flag{display:none;font-size:11px;color:var(--warn);font-weight:600;margin-top:6px}
+  .miami-flag.show{display:block}
+
+  /* ---------- Comps ---------- */
+  .compbox{border-top:1px solid var(--line);margin-top:4px;padding-top:13px}
+  .comphead{display:flex;align-items:center;gap:11px;flex-wrap:wrap}
+  .comptip{font-size:11.5px;color:var(--muted)}
+  .btn.sm{padding:8px 14px;font-size:12.5px}
+  #compStatus{font-size:12px;color:var(--muted);min-height:0;margin-top:9px;line-height:1.4}
+  #compStatus:empty{display:none}
+  .cm-note{color:var(--warn);font-weight:600}
+  .spin{display:inline-block;width:11px;height:11px;border:2px solid var(--line);border-top-color:var(--teal);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-1px;margin-right:6px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .ctbl-wrap{overflow-x:auto;border:1px solid var(--line2);border-radius:10px;margin-top:10px}
+  .ctbl{width:100%;border-collapse:collapse;font-size:12px;min-width:400px}
+  .ctbl th{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);text-align:left;padding:7px 9px;background:var(--paper);font-weight:700}
+  .ctbl th.r,.ctbl td.r{text-align:right}
+  .ctbl td{padding:6px 9px;border-top:1px solid var(--line2);font-family:var(--font-mono)}
+  .ctbl td.ca{font-family:var(--font-sans);max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ctbl .reno{font-family:var(--font-sans);font-size:9px;background:var(--go-bg);color:var(--go);padding:1px 5px;border-radius:10px;letter-spacing:.03em;margin-left:4px}
+  .cst{font-family:var(--font-sans);font-size:9.5px;font-weight:700;text-transform:uppercase;padding:2px 6px;border-radius:10px;letter-spacing:.03em}
+  .cst.sold{background:#E4EBE8;color:var(--teal-deep)}
+  .cst.active{background:var(--warn-bg);color:var(--warn)}
+  .cm-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-top:1px solid var(--line2)}
+  .cm-row.lead{border-top:0;padding-top:11px}
+  .cm-k{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+  .cm-v{font-family:var(--font-mono);font-size:16px;font-weight:600;margin-top:1px}
+</style>
+
+<header>
+  <div class="inner">
+    <div class="brand">
+      <div class="eyebrow">Verandah Properties · Acquisitions</div>
+      <h1>Deal <b>Desk</b></h1>
+      <div class="sub">Florida pre-foreclosure underwriting — buy as-is or renovate &amp; resell, with statewide doc-stamp and carry costs built in.</div>
+    </div>
+    <div class="topctrls">
+      <div class="field" style="margin:0">
+        <label>County</label>
+        <select id="county"></select>
+      </div>
+      <div class="field" style="margin:0">
+        <label>Property type</label>
+        <div class="seg dark" id="ptype">
+          <button data-v="sfr" class="on">Single-family</button>
+          <button data-v="other">Other</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- ================= INPUTS ================= -->
+    <div class="inputs">
+
+      <div class="card">
+        <h2><span class="n">01</span> Property &amp; comps</h2>
+        <div class="row">
+          <div class="field full">
+            <label>Address <span class="tag">powers comp search</span></label>
+            <div class="inp"><input id="addr" type="text" placeholder="2300 SW 19th Ave, Boynton Beach"></div>
+          </div>
+        </div>
+        <div class="row three">
+          <div class="field">
+            <label>Living area <span class="tag">sqft</span></label>
+            <div class="inp"><input class="pct" data-k="sqft" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>Beds</label>
+            <div class="inp"><input class="pct" data-k="beds" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>Baths</label>
+            <div class="inp"><input class="pct" data-k="baths" inputmode="numeric"></div>
+          </div>
+        </div>
+
+        <div class="compbox">
+          <div class="comphead">
+            <button class="btn btn-primary sm" id="compBtn">Pull comps</button>
+            <span class="comptip">Searches recent nearby sales from public web data</span>
+          </div>
+          <div id="compStatus"></div>
+          <div id="compResults"></div>
+          <div id="compSuggest"></div>
+        </div>
+
+        <div class="row" style="margin-top:14px">
+          <div class="field">
+            <label>As-is market value <span class="tag">today, no work</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="asIsValue" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>ARV <span class="tag">after renovation</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="arv" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div class="miami-flag" id="miamiFlag">Miami-Dade: $0.60/$100 deed stamp; +$0.45/$100 surtax applies to non–single-family transfers.</div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">02</span> Acquisition</h2>
+        <div class="hint">What it costs to take title. In pre-foreclosure, the payoff to clear existing liens is often the real price.</div>
+        <div class="row">
+          <div class="field">
+            <label>Purchase price <span class="tag">your offer</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="purchase" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>Liens / back taxes to clear <span class="tag">payoff</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="liens" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Acquisition closing <span class="tag">title, inspection, attorney</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="acqClose" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>Buyer pays deed stamp? <span class="tag">REO often yes</span></label>
+            <div class="seg" id="buyerDocStamp">
+              <button data-v="no" class="on">Seller pays</button>
+              <button data-v="yes">Buyer pays</button>
+            </div>
+          </div>
+        </div>
+
+        <details class="fin" id="finBlock">
+          <summary>Financing <span class="chev">▸</span></summary>
+          <div class="row" style="margin-bottom:4px">
+            <div class="field">
+              <label>Funding</label>
+              <div class="seg" id="funding">
+                <button data-v="cash" class="on">Cash</button>
+                <button data-v="loan">Financed</button>
+              </div>
+            </div>
+            <div class="field finonly">
+              <label>Loan-to-cost <span class="tag">% of purchase</span></label>
+              <div class="inp"><input class="pct" data-k="ltv" inputmode="decimal"><span class="post">%</span></div>
+            </div>
+          </div>
+          <div class="row finonly">
+            <div class="field">
+              <label>Interest rate <span class="tag">hard money typ. 10–12%</span></label>
+              <div class="inp"><input class="pct" data-k="rate" inputmode="decimal"><span class="post">%</span></div>
+            </div>
+            <div class="field">
+              <label>Points <span class="tag">origination</span></label>
+              <div class="inp"><input class="pct" data-k="points" inputmode="decimal"><span class="post">%</span></div>
+            </div>
+          </div>
+          <div class="hint finonly" style="margin-top:-4px">Interest-only carry assumed. Mortgage doc stamp ($0.35/$100) + intangible tax (0.2%) added automatically on the recorded loan.</div>
+        </details>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">03</span> Renovation <span class="tag" style="font-weight:500;text-transform:none;letter-spacing:0;color:#9AA9A6">— renovate &amp; sell only</span></h2>
+        <div class="row three">
+          <div class="field">
+            <label>Reno budget</label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="reno" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>Contingency</label>
+            <div class="inp"><input class="pct" data-k="contingency" inputmode="decimal"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label>As-is make-ready <span class="tag">cleanout</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="makeReady" inputmode="numeric"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">04</span> Holding</h2>
+        <div class="row">
+          <div class="field">
+            <label>Hold — sell as-is <span class="tag">months</span></label>
+            <div class="inp"><input class="pct" data-k="holdAsis" inputmode="decimal"></div>
+          </div>
+          <div class="field">
+            <label>Hold — renovate <span class="tag">months</span></label>
+            <div class="inp"><input class="pct" data-k="holdReno" inputmode="decimal"></div>
+          </div>
+        </div>
+        <div class="row three">
+          <div class="field">
+            <label>Property tax <span class="tag">%/yr of price</span></label>
+            <div class="inp"><input class="pct" data-k="taxRate" inputmode="decimal"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label>Insurance <span class="tag">$/yr</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="insurance" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>HOA <span class="tag">$/mo</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="hoa" inputmode="numeric"></div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Utilities <span class="tag">$/mo</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="util" inputmode="numeric"></div>
+          </div>
+          <div class="field">
+            <label>Lawn / upkeep <span class="tag">$/mo</span></label>
+            <div class="inp"><span class="pre">$</span><input class="money" data-k="lawn" inputmode="numeric"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">05</span> Sale &amp; exit costs</h2>
+        <div class="row three">
+          <div class="field">
+            <label>Agent commission</label>
+            <div class="inp"><input class="pct" data-k="commission" inputmode="decimal"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label>Seller closing <span class="tag">title etc.</span></label>
+            <div class="inp"><input class="pct" data-k="sellerClose" inputmode="decimal"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label>Buyer concessions</label>
+            <div class="inp"><input class="pct" data-k="concessions" inputmode="decimal"><span class="post">%</span></div>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:0">Florida deed documentary stamp on your sale is calculated automatically by county.</div>
+      </div>
+
+      <div class="card">
+        <h2><span class="n">06</span> Your rules</h2>
+        <div class="row">
+          <div class="field">
+            <label>Offer rule <span class="tag">% of resale value</span></label>
+            <div class="inp"><input class="pct" data-k="rule" inputmode="decimal"><span class="post">%</span></div>
+          </div>
+          <div class="field">
+            <label>Target return <span class="tag">cash-on-cash</span></label>
+            <div class="inp"><input class="pct" data-k="target" inputmode="decimal"><span class="post">%</span></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ================= RESULTS ================= -->
+    <div class="results">
+      <div class="verdict v-warn" id="verdict">
+        <div class="vk">Deal verdict</div>
+        <div class="grade"><span class="dot"></span><span id="gradeText">Enter numbers</span></div>
+        <div class="rec" id="recText">Add a resale value and purchase price to begin.</div>
+      </div>
+
+      <div class="mao">
+        <div class="lbl">Max offer to hit your target return</div>
+        <div class="big" id="maoTarget">—</div>
+        <div class="note" id="maoNote">Highest price that still returns your target, after every cost.</div>
+        <div class="split">
+          <div><div class="k">70% rule · renovate</div><div class="v" id="maoRuleReno">—</div></div>
+          <div><div class="k">70% rule · as-is</div><div class="v" id="maoRuleAsis">—</div></div>
+        </div>
+      </div>
+
+      <div class="strats" id="strats">
+        <div class="strat" id="stratAsis">
+          <h3>Sell as-is</h3>
+          <div class="gl warn" id="glAsis"><span class="gdot"></span><span>—</span></div>
+          <div class="profit" id="profAsis">—</div>
+          <div class="plabel">net profit</div>
+          <div class="mets">
+            <div class="met"><div class="mk">Cash ROI</div><div class="mv" id="roiAsis">—</div></div>
+            <div class="met"><div class="mk">Annualized</div><div class="mv" id="annAsis">—</div></div>
+            <div class="met"><div class="mk">Margin</div><div class="mv" id="marAsis">—</div></div>
+            <div class="met"><div class="mk">Cash in</div><div class="mv" id="cashAsis">—</div></div>
+          </div>
+        </div>
+        <div class="strat" id="stratReno">
+          <h3>Renovate &amp; sell</h3>
+          <div class="gl warn" id="glReno"><span class="gdot"></span><span>—</span></div>
+          <div class="profit" id="profReno">—</div>
+          <div class="plabel">net profit</div>
+          <div class="mets">
+            <div class="met"><div class="mk">Cash ROI</div><div class="mv" id="roiReno">—</div></div>
+            <div class="met"><div class="mk">Annualized</div><div class="mv" id="annReno">—</div></div>
+            <div class="met"><div class="mk">Margin</div><div class="mv" id="marReno">—</div></div>
+            <div class="met"><div class="mk">Cash in</div><div class="mv" id="cashReno">—</div></div>
+          </div>
+        </div>
+      </div>
+
+      <details class="breakdown" id="bd">
+        <summary>Cost breakdown <span class="chev">▸</span></summary>
+        <div id="bdBody"></div>
+      </details>
+
+      <div class="saver">
+        <input id="dealName" type="text" placeholder="Name this deal to save it">
+        <button class="btn btn-primary" id="saveBtn">Save</button>
+      </div>
+
+      <div class="saved">
+        <h2>Saved deals</h2>
+        <div id="dealList"><div class="empty">No saved deals yet.</div></div>
+      </div>
+
+      <div class="foot">
+        <b>How the math works.</b> Net profit = resale price − purchase − liens − closing − financing − reno − holding − selling costs. Cash ROI divides profit by actual cash invested (down payment + costs). The target-offer figure back-solves the highest purchase price that still clears your target return. <b>Comps</b> are pulled from public web data and turned into a $/sqft estimate — a seed value, not a CMA. Confirm reno scope with contractor bids, resale value with closed sales, and the lien payoff with a title search before you commit.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var COUNTIES = ["Alachua","Baker","Bay","Bradford","Brevard","Broward","Calhoun","Charlotte","Citrus","Clay","Collier","Columbia","DeSoto","Dixie","Duval","Escambia","Flagler","Franklin","Gadsden","Gilchrist","Glades","Gulf","Hamilton","Hardee","Hendry","Hernando","Highlands","Hillsborough","Holmes","Indian River","Jackson","Jefferson","Lafayette","Lake","Lee","Leon","Levy","Liberty","Madison","Manatee","Marion","Martin","Miami-Dade","Monroe","Nassau","Okaloosa","Okeechobee","Orange","Osceola","Palm Beach","Pasco","Pinellas","Polk","Putnam","St. Johns","St. Lucie","Santa Rosa","Sarasota","Seminole","Sumter","Suwannee","Taylor","Union","Volusia","Wakulla","Walton","Washington"];
+
+  // ----- defaults -----
+  var S = {
+    county:"Palm Beach", ptype:"sfr",
+    addr:"", sqft:0, beds:0, baths:0,
+    asIsValue:0, arv:0,
+    purchase:0, liens:0, acqClose:2500, buyerDocStamp:"no",
+    funding:"cash", ltv:80, rate:11, points:2,
+    reno:25000, contingency:12, makeReady:2000,
+    holdAsis:2, holdReno:5,
+    taxRate:1.1, insurance:3600, hoa:0, util:150, lawn:120,
+    commission:5.5, sellerClose:1.0, concessions:1.0,
+    rule:70, target:20
+  };
+
+  var STORE_KEY = "fl_deals_v1";
+
+  // ----- helpers -----
+  function num(v){ v = parseFloat(String(v).replace(/[^0-9.\-]/g,"")); return isFinite(v)?v:0; }
+  function money(n){ if(!isFinite(n)) return "—"; var s=Math.round(Math.abs(n)).toLocaleString("en-US"); return (n<0?"-$":"$")+s; }
+  function pct(n){ if(!isFinite(n)) return "—"; return (n>=0?"":"-")+Math.abs(n*100).toFixed(1)+"%"; }
+  function ceilUnits(x){ return Math.ceil(Math.max(0,x)/100); }
+
+  // Florida deed documentary stamp on a sale/transfer of `price`
+  function deedDocStamp(price){
+    var u = ceilUnits(price);
+    if(S.county==="Miami-Dade"){
+      var base = u*0.60;
+      var surtax = (S.ptype==="sfr") ? 0 : u*0.45;
+      return base + surtax;
+    }
+    return u*0.70;
+  }
+
+  function monthlyCarry(price){
+    return (price*(S.taxRate/100))/12 + S.insurance/12 + S.hoa + S.util + S.lawn;
+  }
+
+  // Core per-strategy economics for a GIVEN purchase price P.
+  // strat: "asis" | "reno"
+  function economics(P, strat){
+    var isReno = strat==="reno";
+    var resale = isReno ? S.arv : S.asIsValue;
+    var months = isReno ? S.holdReno : S.holdAsis;
+    var renoCost = isReno ? S.reno*(1+S.contingency/100) : S.makeReady;
+
+    // financing
+    var loan=0, down=P, points=0, interest=0, mortTax=0;
+    if(S.funding==="loan"){
+      loan = P*(S.ltv/100);
+      down = P - loan;
+      points = loan*(S.points/100);
+      interest = loan*(S.rate/100)*(months/12);
+      mortTax = ceilUnits(loan)*0.35 + loan*0.002; // doc stamp on note + intangible tax
+    }
+    var finCost = points + interest;
+
+    // acquisition closing
+    var acq = S.acqClose + (S.buyerDocStamp==="yes" ? deedDocStamp(P) : 0) + mortTax;
+
+    var holding = monthlyCarry(P)*months;
+
+    // selling costs (investor is the seller -> pays deed stamp)
+    var sellCommission = resale*(S.commission/100);
+    var sellClose = resale*(S.sellerClose/100);
+    var sellStamp = deedDocStamp(resale);
+    var sellConc = resale*(S.concessions/100);
+    var selling = sellCommission + sellClose + sellStamp + sellConc;
+
+    var totalCost = P + S.liens + acq + finCost + renoCost + holding + selling;
+    var profit = resale - totalCost;
+    var investedCash = down + S.liens + acq + finCost + renoCost + holding;
+    var roi = investedCash>0 ? profit/investedCash : NaN;
+    var margin = resale>0 ? profit/resale : NaN;
+    var annual = (months>0 && isFinite(roi)) ? roi*(12/months) : NaN;
+
+    return {
+      resale:resale, months:months, P:P, loan:loan, down:down,
+      points:points, interest:interest, mortTax:mortTax, finCost:finCost,
+      acq:acq, holding:holding, renoCost:renoCost,
+      selling:selling, sellCommission:sellCommission, sellClose:sellClose, sellStamp:sellStamp, sellConc:sellConc,
+      totalCost:totalCost, profit:profit, investedCash:investedCash, roi:roi, margin:margin, annual:annual
+    };
+  }
+
+  function grade(e){
+    if(!(e.resale>0)) return "none";
+    if(e.profit<=0) return "stop";
+    var roiOk = isFinite(e.roi) && e.roi >= S.target/100;
+    var marOk = isFinite(e.margin) && e.margin >= 0.10;
+    if(roiOk && marOk) return "go";
+    return "warn";
+  }
+
+  // Back-solve the highest purchase price that yields target cash-on-cash ROI.
+  function maxOfferForTarget(strat){
+    var resale = strat==="reno" ? S.arv : S.asIsValue;
+    if(!(resale>0)) return NaN;
+    var t = S.target/100;
+    var roiAt = function(P){ return economics(P, strat).roi; };
+    // roi decreases as P increases. If even ~$0 can't hit target, infeasible.
+    var lo=0, hi=resale*1.2;
+    if(!(isFinite(roiAt(lo)) && roiAt(lo) >= t)) return NaN;
+    for(var i=0;i<70;i++){
+      var mid=(lo+hi)/2;
+      var r=roiAt(mid);
+      if(isFinite(r) && r>=t) lo=mid; else hi=mid;
+    }
+    return lo;
+  }
+
+  // ----- rendering -----
+  function setGL(el, g){
+    el.className = "gl " + (g==="go"?"go":g==="warn"?"warn":"stop");
+    var txt = g==="go"?"Strong":g==="warn"?"Marginal":g==="stop"?"Pass":"—";
+    el.querySelector("span:last-child").textContent = txt;
+  }
+
+  function fillStrat(suffix, e){
+    var g = grade(e);
+    setGL(document.getElementById("gl"+suffix), g==="none"?"warn":g);
+    var pf = document.getElementById("prof"+suffix);
+    pf.textContent = e.resale>0 ? money(e.profit) : "—";
+    pf.className = "profit" + (e.profit<0 ? " neg":"");
+    document.getElementById("roi"+suffix).textContent = e.resale>0 ? pct(e.roi) : "—";
+    document.getElementById("ann"+suffix).textContent = e.resale>0 ? pct(e.annual) : "—";
+    document.getElementById("mar"+suffix).textContent = e.resale>0 ? pct(e.margin) : "—";
+    document.getElementById("cash"+suffix).textContent = e.resale>0 ? money(e.investedCash) : "—";
+  }
+
+  function bdSection(title, e){
+    function row(label, val, mini, neg){
+      return "<tr><td>"+label+(mini?" <span class='mini'>"+mini+"</span>":"")+"</td><td class='v"+(neg?" neg":"")+"'>"+val+"</td></tr>";
+    }
+    var h = "<div class='bd-strat'>"+title+"</div><table class='bd'>";
+    h += row("Resale price", money(e.resale));
+    h += row("Purchase", "-"+money(e.P), null, true);
+    if(S.liens>0) h += row("Liens / back taxes", "-"+money(S.liens), null, true);
+    h += row("Acquisition closing", "-"+money(e.acq), e.mortTax>0?"incl. loan tax":(S.buyerDocStamp==="yes"?"incl. deed stamp":null), true);
+    if(e.finCost>0) h += row("Financing", "-"+money(e.finCost), e.points.toFixed(0)*1+" pts + carry", true);
+    h += row(e===null?"":"Renovation", "-"+money(e.renoCost), (title.indexOf("Renovate")>=0?"incl. contingency":"make-ready"), true);
+    h += row("Holding "+"("+e.months+" mo)", "-"+money(e.holding), null, true);
+    h += row("Selling costs", "-"+money(e.selling), "comm + stamp + conc", true);
+    h += "<tr class='sum'><td>Net profit</td><td class='v"+(e.profit<0?" neg":"")+"'>"+money(e.profit)+"</td></tr>";
+    h += "</table>";
+    return h;
+  }
+
+  function render(){
+    // Miami-Dade flag
+    document.getElementById("miamiFlag").classList.toggle("show", S.county==="Miami-Dade");
+
+    var eA = economics(S.purchase, "asis");
+    var eR = economics(S.purchase, "reno");
+
+    fillStrat("Asis", eA);
+    fillStrat("Reno", eR);
+
+    // best strategy
+    var hasResale = (S.asIsValue>0 || S.arv>0);
+    var best=null, bestE=null;
+    if(eA.resale>0 || eR.resale>0){
+      if(eR.resale>0 && (eA.resale<=0 || eR.profit>=eA.profit)){ best="reno"; bestE=eR; }
+      else { best="asis"; bestE=eA; }
+    }
+    document.getElementById("stratReno").classList.toggle("best", best==="reno");
+    document.getElementById("stratAsis").classList.toggle("best", best==="asis");
+    // best badge
+    document.querySelectorAll(".strat .badge").forEach(function(b){b.remove();});
+    if(best){
+      var bs=document.getElementById(best==="reno"?"stratReno":"stratAsis");
+      var bd=document.createElement("div"); bd.className="badge"; bd.textContent="Better exit"; bs.appendChild(bd);
+    }
+
+    // verdict
+    var vEl=document.getElementById("verdict");
+    var gradeText=document.getElementById("gradeText");
+    var recText=document.getElementById("recText");
+    if(!hasResale || !(S.purchase>0)){
+      vEl.className="verdict v-warn"; gradeText.textContent="Enter numbers";
+      recText.innerHTML="Add a resale value and purchase price to begin.";
+    } else {
+      var g=grade(bestE);
+      var label = g==="go"?"Strong deal":g==="warn"?"Marginal":"Pass";
+      vEl.className="verdict "+(g==="go"?"v-go":g==="warn"?"v-warn":"v-stop");
+      gradeText.textContent=label;
+      var name = best==="reno"?"Renovate &amp; sell":"Sell as-is";
+      if(g==="stop"){
+        recText.innerHTML="Neither exit clears at this price. Best case is <b>"+name+"</b> at "+money(bestE.profit)+". Negotiate the buy down or walk.";
+      } else if(g==="warn"){
+        recText.innerHTML="<b>"+name+"</b> pencils at "+money(bestE.profit)+" ("+pct(bestE.roi)+" cash ROI) but falls short of your target or 10% margin.";
+      } else {
+        recText.innerHTML="<b>"+name+"</b> clears your bar: "+money(bestE.profit)+" profit, "+pct(bestE.roi)+" cash ROI, "+pct(bestE.margin)+" margin.";
+      }
+    }
+
+    // MAO
+    var mt = best ? maxOfferForTarget(best) : (S.arv>0?maxOfferForTarget("reno"):maxOfferForTarget("asis"));
+    var maoEl=document.getElementById("maoTarget");
+    var maoNote=document.getElementById("maoNote");
+    if(isFinite(mt)){
+      maoEl.textContent=money(mt);
+      var stratName = best==="asis"?"as-is":"renovate";
+      var delta = S.purchase>0 ? (mt - S.purchase) : NaN;
+      if(isFinite(delta) && S.purchase>0){
+        if(delta>=0) maoNote.innerHTML="For your "+S.target+"% target on the "+stratName+" exit — about "+money(delta)+" of room below your current offer.";
+        else maoNote.innerHTML="For your "+S.target+"% target on the "+stratName+" exit — your offer is "+money(-delta)+" <b>over</b> this ceiling.";
+      } else {
+        maoNote.innerHTML="Highest price that still returns "+S.target+"% on the "+stratName+" exit, after every cost.";
+      }
+    } else {
+      maoEl.textContent="—";
+      maoNote.textContent="Add a resale value to compute your buy-right number.";
+    }
+
+    document.getElementById("maoRuleReno").textContent = S.arv>0 ? money(S.arv*(S.rule/100) - S.reno*(1+S.contingency/100)) : "—";
+    document.getElementById("maoRuleAsis").textContent = S.asIsValue>0 ? money(S.asIsValue*(S.rule/100)) : "—";
+
+    // breakdown
+    var bdBody=document.getElementById("bdBody");
+    bdBody.innerHTML = (eR.resale>0?bdSection("Renovate &amp; sell",eR):"") + (eA.resale>0?bdSection("Sell as-is",eA):"");
+    if(!eR.resale && !eA.resale) bdBody.innerHTML="<div class='empty'>Enter resale values to see the breakdown.</div>";
+  }
+
+  // ----- inputs wiring -----
+  function fmtField(inp){
+    var k=inp.getAttribute("data-k");
+    if(inp.classList.contains("money")){
+      inp.value = S[k] ? Math.round(S[k]).toLocaleString("en-US") : "";
+    } else if(inp.classList.contains("pct")){
+      inp.value = (S[k]) ? String(S[k]) : "";
+    } else {
+      inp.value = S[k]||"";
+    }
+  }
+
+  function syncAllInputs(){
+    document.querySelectorAll("input[data-k]").forEach(fmtField);
+    // segmented + selects
+    setSeg("buyerDocStamp", S.buyerDocStamp);
+    setSeg("funding", S.funding);
+    setSeg("ptype", S.ptype);
+    document.getElementById("county").value=S.county;
+    updateFinVisibility();
+  }
+
+  function setSeg(id, val){
+    document.querySelectorAll("#"+id+" button").forEach(function(b){
+      b.classList.toggle("on", b.getAttribute("data-v")===val);
+    });
+  }
+
+  function updateFinVisibility(){
+    var show = S.funding==="loan";
+    document.querySelectorAll(".finonly").forEach(function(el){ el.style.display = show?"":"none"; });
+    if(show) document.getElementById("finBlock").open=true;
+  }
+
+  function wire(){
+    // county
+    var sel=document.getElementById("county");
+    COUNTIES.forEach(function(c){ var o=document.createElement("option"); o.value=c;o.textContent=c; if(c==="Miami-Dade")o.textContent="Miami-Dade ⚑"; sel.appendChild(o); });
+    sel.addEventListener("change",function(){ S.county=this.value; render(); });
+
+    // numeric inputs
+    document.querySelectorAll("input[data-k]").forEach(function(inp){
+      var k=inp.getAttribute("data-k");
+      inp.addEventListener("input",function(){
+        if(inp.classList.contains("money")||inp.classList.contains("pct")) S[k]=num(this.value);
+        else S[k]=this.value;
+        render();
+      });
+      inp.addEventListener("blur",function(){
+        if(inp.classList.contains("money")||inp.classList.contains("pct")) fmtField(inp);
+      });
+      inp.addEventListener("focus",function(){
+        if(inp.classList.contains("money")) this.value = S[k]?String(Math.round(S[k])):"";
+      });
+    });
+
+    // address (no data-k formatting beyond text)
+    document.getElementById("addr").addEventListener("input",function(){ S.addr=this.value; });
+
+    // segmented controls
+    [["buyerDocStamp","buyerDocStamp"],["funding","funding"],["ptype","ptype"]].forEach(function(p){
+      var id=p[0], key=p[1];
+      document.querySelectorAll("#"+id+" button").forEach(function(b){
+        b.addEventListener("click",function(){
+          S[key]=this.getAttribute("data-v");
+          setSeg(id,S[key]);
+          if(key==="funding") updateFinVisibility();
+          render();
+        });
+      });
+    });
+
+    // comps
+    document.getElementById("compBtn").addEventListener("click", pullComps);
+
+    // save
+    document.getElementById("saveBtn").addEventListener("click", saveDeal);
+    document.getElementById("dealName").addEventListener("keydown",function(e){ if(e.key==="Enter") saveDeal(); });
+  }
+
+  // ----- persistence -----
+  function summaryForSave(){
+    var eA=economics(S.purchase,"asis"), eR=economics(S.purchase,"reno");
+    var best = (eR.resale>0 && (eA.resale<=0 || eR.profit>=eA.profit)) ? eR : eA;
+    return { profit:best.profit, roi:best.roi, grade:grade(best), bestStrat:(best===eR?"reno":"asis") };
+  }
+
+  async function loadDeals(){
+    var list=[];
+    try{
+      if(window.storage){
+        var r=await window.storage.get(STORE_KEY,false);
+        if(r && r.value) list=JSON.parse(r.value);
+      }
+    }catch(e){ list=window.__deals||[]; }
+    window.__deals=list;
+    renderDeals(list);
+  }
+
+  async function persist(list){
+    window.__deals=list;
+    try{ if(window.storage) await window.storage.set(STORE_KEY, JSON.stringify(list), false); }catch(e){}
+    renderDeals(list);
+  }
+
+  function saveDeal(){
+    var nameInput=document.getElementById("dealName");
+    var name=(nameInput.value||S.addr||S.county+" deal").trim();
+    var sm=summaryForSave();
+    var rec={ id:Date.now(), name:name, ts:new Date().toISOString(), state:JSON.parse(JSON.stringify(S)), summary:sm };
+    var list=(window.__deals||[]).slice();
+    list.unshift(rec);
+    nameInput.value="";
+    persist(list);
+  }
+
+  function renderDeals(list){
+    var box=document.getElementById("dealList");
+    if(!list || !list.length){ box.innerHTML="<div class='empty'>No saved deals yet.</div>"; return; }
+    box.innerHTML="";
+    list.forEach(function(d){
+      var g=d.summary.grade;
+      var pill=g==="go"?"go":g==="warn"?"warn":"stop";
+      var pillTxt=g==="go"?"Strong":g==="warn"?"Marginal":g==="stop"?"Pass":"—";
+      var el=document.createElement("div"); el.className="deal";
+      el.innerHTML =
+        "<div class='dinfo'><div class='dn'>"+escapeHtml(d.name)+"</div>"+
+        "<div class='dm'>"+money(d.summary.profit)+" · "+pct(d.summary.roi)+" ROI · "+(d.summary.bestStrat==="reno"?"reno":"as-is")+"</div></div>"+
+        "<span class='pill "+pill+"'>"+pillTxt+"</span>"+
+        "<button class='x' title='Delete'>&times;</button>";
+      el.querySelector(".dinfo").addEventListener("click",function(){ loadDealState(d); });
+      el.querySelector(".x").addEventListener("click",function(ev){ ev.stopPropagation(); deleteDeal(d.id); });
+      box.appendChild(el);
+    });
+  }
+
+  function loadDealState(d){
+    S=JSON.parse(JSON.stringify(d.state));
+    document.getElementById("addr").value=S.addr||"";
+    syncAllInputs();
+    render();
+    window.scrollTo({top:0,behavior:"smooth"});
+  }
+
+  function deleteDeal(id){
+    var list=(window.__deals||[]).filter(function(d){ return d.id!==id; });
+    persist(list);
+  }
+
+  function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];}); }
+
+  // ----- comps (address-driven, public web data via Claude + web search) -----
+  function extractJsonArray(t){
+    if(!t) return null;
+    t = t.replace(/```json/gi,"").replace(/```/g,"");
+    var a = t.indexOf("["), b = t.lastIndexOf("]");
+    if(a>=0 && b>a){ try{ return JSON.parse(t.slice(a,b+1)); }catch(e){} }
+    return null;
+  }
+
+  function pctile(arr,p){
+    if(!arr.length) return NaN;
+    var i=(arr.length-1)*p, lo=Math.floor(i), hi=Math.ceil(i);
+    if(lo===hi) return arr[lo];
+    return arr[lo] + (arr[hi]-arr[lo])*(i-lo);
+  }
+
+  async function pullComps(){
+    var addr=(S.addr||"").trim();
+    var statusEl=document.getElementById("compStatus");
+    var btn=document.getElementById("compBtn");
+    document.getElementById("compResults").innerHTML="";
+    document.getElementById("compSuggest").innerHTML="";
+    if(!addr){ statusEl.textContent="Enter a property address first."; return; }
+    btn.disabled=true; btn.textContent="Searching…";
+    statusEl.innerHTML="<span class='spin'></span>Searching recent sales near "+escapeHtml(addr)+"…";
+
+    var prompt =
+      "You are a real estate comps analyst. Find recent comparable home sales near this Florida property: \""+addr+"\" in "+S.county+" County, FL. "+
+      "Prioritize SOLD single-family homes within about 1.5 miles, sold within the last 12 months, similar in size"+
+      (S.sqft>0?(" to roughly "+S.sqft+" sqft"):"")+
+      (S.beds>0?(" with around "+S.beds+" beds"):"")+
+      ". If sold data is thin, you may include current active listings, marked accordingly. "+
+      "Return ONLY a JSON array (no prose, no markdown fences) of up to 8 objects, each with keys: "+
+      "address (string), beds (number), baths (number), sqft (number), price (number = sold price or list price), "+
+      "date (string \"YYYY-MM\"), distance_mi (number), status (\"sold\" or \"active\"), renovated (boolean, your best guess from the listing). "+
+      "Use real figures from the search results. If you find nothing usable, return [].";
+
+    try{
+      var res=await fetch("https://api.anthropic.com/v1/messages",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          model:"claude-sonnet-4-6",
+          max_tokens:1000,
+          messages:[{role:"user",content:prompt}],
+          tools:[{type:"web_search_20250305",name:"web_search"}]
+        })
+      });
+      var data=await res.json();
+      var text=(data.content||[]).filter(function(b){return b.type==="text";}).map(function(b){return b.text;}).join("\n");
+      var comps=extractJsonArray(text);
+      if(!comps){ statusEl.textContent="Couldn't read comps this time. Try again, or enter As-is / ARV manually below."; }
+      else { window.__comps=comps; renderComps(comps); }
+    }catch(e){
+      statusEl.textContent="Comp lookup unavailable right now. You can still enter values manually below.";
+    }
+    btn.disabled=false; btn.textContent="Pull comps";
+  }
+
+  function renderComps(comps){
+    var statusEl=document.getElementById("compStatus");
+    var resEl=document.getElementById("compResults");
+    var sugEl=document.getElementById("compSuggest");
+    if(!comps.length){ statusEl.textContent="No comparable sales found nearby. Enter As-is / ARV manually below."; return; }
+
+    statusEl.innerHTML="Found "+comps.length+" comp"+(comps.length>1?"s":"")+" · <span class='cm-note'>public-web estimate — verify against a closed-sales CMA</span>";
+
+    var rows=comps.map(function(c){
+      var ppsf=(c.price>0 && c.sqft>0) ? c.price/c.sqft : null;
+      var st=(c.status==="active") ? "active" : "sold";
+      return "<tr>"+
+        "<td class='ca' title='"+escapeHtml(c.address||"")+"'>"+escapeHtml(c.address||"—")+(c.renovated?"<span class='reno'>reno</span>":"")+"</td>"+
+        "<td>"+(c.beds||"–")+"/"+(c.baths||"–")+"</td>"+
+        "<td class='r'>"+(c.sqft?Math.round(c.sqft).toLocaleString("en-US"):"–")+"</td>"+
+        "<td class='r'>"+(c.price?money(c.price):"–")+"</td>"+
+        "<td class='r'>"+(ppsf?("$"+Math.round(ppsf)):"–")+"</td>"+
+        "<td>"+escapeHtml(c.date||"–")+"</td>"+
+        "<td><span class='cst "+st+"'>"+st+"</span></td>"+
+      "</tr>";
+    }).join("");
+    resEl.innerHTML="<div class='ctbl-wrap'><table class='ctbl'><thead><tr>"+
+      "<th>Comp</th><th>bd/ba</th><th class='r'>sqft</th><th class='r'>price</th><th class='r'>$/sf</th><th>date</th><th>type</th>"+
+      "</tr></thead><tbody>"+rows+"</tbody></table></div>";
+
+    var ppsfs=comps.filter(function(c){return c.price>0 && c.sqft>0;}).map(function(c){return c.price/c.sqft;}).sort(function(a,b){return a-b;});
+    if(!ppsfs.length){ sugEl.innerHTML="<div class='cm-row lead'><div class='cm-k'>Not enough price + sqft data to suggest a value.</div></div>"; return; }
+    var median=pctile(ppsfs,0.5), p75=pctile(ppsfs,0.75);
+
+    if(!(S.sqft>0)){
+      sugEl.innerHTML="<div class='cm-row lead'><div><div class='cm-k'>Median sale price</div><div class='cm-v'>$"+Math.round(median)+"/sf</div></div><span class='comptip'>Enter living area above to convert to a value</span></div>";
+      return;
+    }
+    var asisVal=Math.round(median*S.sqft/1000)*1000;
+    var arvVal=Math.round(p75*S.sqft/1000)*1000;
+    sugEl.innerHTML=
+      "<div class='cm-row lead'><div><div class='cm-k'>Suggested as-is · median $"+Math.round(median)+"/sf</div><div class='cm-v'>"+money(asisVal)+"</div></div><button class='btn btn-ghost sm' data-apply='asis' data-val='"+asisVal+"'>Use as As-is</button></div>"+
+      "<div class='cm-row'><div><div class='cm-k'>Suggested ARV · top-quartile $"+Math.round(p75)+"/sf</div><div class='cm-v'>"+money(arvVal)+"</div></div><button class='btn btn-ghost sm' data-apply='arv' data-val='"+arvVal+"'>Use as ARV</button></div>";
+    sugEl.querySelectorAll("button[data-apply]").forEach(function(b){
+      b.addEventListener("click",function(){
+        var v=num(this.getAttribute("data-val"));
+        if(this.getAttribute("data-apply")==="asis") S.asIsValue=v; else S.arv=v;
+        syncAllInputs(); render();
+      });
+    });
+  }
+
+  // ----- init -----
+  wire();
+  syncAllInputs();
+  render();
+  loadDeals();
+})();
+</script>
